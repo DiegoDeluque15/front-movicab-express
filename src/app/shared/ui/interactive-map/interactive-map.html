@@ -1,6 +1,6 @@
-<div class="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
+<div class="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100" [style.height]="height()" [style.min-height]="'250px'">
     <!-- Contenedor del Mapa Leaflet -->
-    <div #mapContainer class="w-full" [style.height]="height()"></div>
+    <div #mapContainer class="w-full h-full min-h-[250px]" [style.height]="height()"></div>
 
     <!-- Barra de Búsqueda Flotante y Geocodificación (Solo en modo passenger_pickup) -->
     @if (interactiveMode() === 'passenger_pickup' && showSearch()) {
