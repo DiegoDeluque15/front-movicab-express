@@ -74,6 +74,7 @@ export class InteractiveMap implements OnInit, OnDestroy {
 
   private readonly searchSubject = new Subject<string>();
   private searchSubscription?: Subscription;
+  private resizeObserver?: ResizeObserver;
 
   // Próximo objetivo al hacer clic directo en el mapa
   clickTarget: 'origin' | 'destination' = 'origin';
@@ -87,6 +88,7 @@ export class InteractiveMap implements OnInit, OnDestroy {
       const dispatch = this.dispatchResources();
 
       if (this.map) {
+        this.map.invalidateSize();
         this.updateOriginMarker(orig);
         this.updateDestinationMarker(dest);
         this.updateDriverMarker(driver);
@@ -99,13 +101,26 @@ export class InteractiveMap implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.initMap();
     this.setupSearchStream();
+    this.setupResizeObserver();
   }
 
   ngOnDestroy(): void {
     this.searchSubscription?.unsubscribe();
+    this.resizeObserver?.disconnect();
     if (this.map) {
       this.map.remove();
       this.map = null;
+    }
+  }
+
+  private setupResizeObserver(): void {
+    if (typeof ResizeObserver !== 'undefined' && this.mapContainer?.nativeElement) {
+      this.resizeObserver = new ResizeObserver(() => {
+        if (this.map) {
+          this.map.invalidateSize();
+        }
+      });
+      this.resizeObserver.observe(this.mapContainer.nativeElement);
     }
   }
 
@@ -126,11 +141,21 @@ export class InteractiveMap implements OnInit, OnDestroy {
     // Control de zoom discreto en la esquina inferior derecha
     L.control.zoom({ position: 'bottomright' }).addTo(this.map);
 
-    // Teselas centralizadas de OpenStreetMap con atribución estricta
+    // Teselas optimizadas de OpenStreetMap con múltiples subdominios y precarga de buffer
     L.tileLayer(environment.map.tileLayerUrl, {
       maxZoom: environment.map.maxZoom,
       attribution: environment.map.attribution,
+      subdomains: ['a', 'b', 'c'],
+      keepBuffer: 8,
+      updateWhenIdle: false,
+      updateWhenZooming: true,
+      crossOrigin: true,
     }).addTo(this.map);
+
+    // Invalidaciones escalonadas para absorber la animación y el cálculo de layout de PrimeNG/CSS
+    setTimeout(() => this.map?.invalidateSize(), 50);
+    setTimeout(() => this.map?.invalidateSize(), 200);
+    setTimeout(() => this.map?.invalidateSize(), 600);
 
     // Manejo de clics en el mapa en modo de selección
     if (this.interactiveMode() === 'passenger_pickup') {
@@ -482,9 +507,13 @@ export class InteractiveMap implements OnInit, OnDestroy {
           dashArray: routeResult.isRealRoute ? undefined : '6, 8', // punteado si es fallback
         }).addTo(this.map);
 
+        // Asegurar cálculo de dimensiones antes de auto-encuadrar
+        this.map.invalidateSize();
+
         // Encuadrar la cámara automáticamente para mostrar toda la ruta con margen visual
         const bounds = L.latLngBounds(routeResult.coordinates);
         this.map.fitBounds(bounds, { padding: [45, 45], maxZoom: 16 });
+        setTimeout(() => this.map?.invalidateSize(), 150);
       }
     });
   }
