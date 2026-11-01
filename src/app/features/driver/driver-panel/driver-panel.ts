@@ -13,6 +13,8 @@ import { PageHeader } from '../../../shared/ui/page-header/page-header';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { InteractiveMap } from '../../../shared/ui/interactive-map/interactive-map';
 import { TripApi } from '../../trips/trip-api';
+import { DriverApi } from '../../drivers/driver-api';
+import { SessionStore } from '../../../core/auth/session.store';
 import { TrackingWsService } from '../../../core/services/tracking-ws.service';
 import { DriverGpsService } from '../../../core/services/driver-gps.service';
 import { Trip, TripStatus, TRIP_STATUS_LABEL } from '../../../core/models/trip.model';
@@ -38,6 +40,8 @@ import { Trip, TripStatus, TRIP_STATUS_LABEL } from '../../../core/models/trip.m
 })
 export class DriverPanel implements OnInit, OnDestroy {
   private readonly tripApi = inject(TripApi);
+  private readonly driverApi = inject(DriverApi);
+  private readonly session = inject(SessionStore);
   private readonly ws = inject(TrackingWsService);
   readonly gps = inject(DriverGpsService);
   private readonly messages = inject(MessageService);
@@ -61,7 +65,7 @@ export class DriverPanel implements OnInit, OnDestroy {
     this.gps.stopTracking();
   }
 
-  loadAssignedTrips(): void {
+  loadAssignedTrips(autoRetry = true): void {
     this.loading.set(true);
     this.tripApi.getAssignedTrips().subscribe({
       next: (trips) => {
@@ -72,7 +76,13 @@ export class DriverPanel implements OnInit, OnDestroy {
         const current = trips.find((t) => t.status === 'en_curso') || trips[0] || null;
         this.selectTrip(current);
       },
-      error: () => {
+      error: (err) => {
+        // Si el usuario no tiene perfil de conductor asociado (404), auto-vincular de forma transparente
+        if (err?.status === 404 && autoRetry) {
+          this.autoLinkDriverProfile();
+          return;
+        }
+
         this.loading.set(false);
         this.messages.add({
           severity: 'error',
@@ -80,6 +90,56 @@ export class DriverPanel implements OnInit, OnDestroy {
           detail: 'No se pudieron consultar las carreras asignadas.',
         });
       },
+    });
+  }
+
+  /**
+   * Auto-vinculación transparente: asocia el usuario actual a un conductor libre
+   * o crea el perfil operativo automáticamente sin requerir intervención manual en la BD.
+   */
+  private autoLinkDriverProfile(): void {
+    const user = this.session.user();
+    if (!user?.id) {
+      this.loading.set(false);
+      return;
+    }
+
+    this.driverApi.list().subscribe({
+      next: (drivers) => {
+        const target = drivers.find((d) => !d.user_id) || drivers[0];
+        if (target) {
+          this.driverApi.update(target.id, { user_id: user.id, is_available: true }).subscribe({
+            next: () => {
+              this.messages.add({
+                severity: 'info',
+                summary: 'Perfil Vinculado Automáticamente',
+                detail: `Tu cuenta ha sido vinculada al conductor "${target.name}".`,
+              });
+              this.loadAssignedTrips(false);
+            },
+            error: () => this.loading.set(false),
+          });
+        } else {
+          this.driverApi.create({
+            name: user.username ? `Conductor ${user.username}` : `Conductor ${user.id}`,
+            description: 'Conductor auto-vinculado',
+            status: 'active',
+            user_id: user.id,
+            is_available: true,
+          }).subscribe({
+            next: (created) => {
+              this.messages.add({
+                severity: 'success',
+                summary: 'Perfil Creado Automáticamente',
+                detail: `Se configuró el conductor operativo "${created.name}".`,
+              });
+              this.loadAssignedTrips(false);
+            },
+            error: () => this.loading.set(false),
+          });
+        }
+      },
+      error: () => this.loading.set(false),
     });
   }
 
