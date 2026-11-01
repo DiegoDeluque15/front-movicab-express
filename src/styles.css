@@ -1,0 +1,65 @@
+@layer theme, base, primeng, utilities;
+@import 'tailwindcss';
+@import 'primeicons/primeicons.css';
+
+/* ── Estilos Cartográficos Modernos para Leaflet en MoviCab Express ── */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 1;
+}
+
+/* Transición suave para desplazamiento del vehículo en tiempo real */
+.smooth-vehicle-marker {
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+}
+
+/* Pulsación de aura para marcadores activos */
+@keyframes markerPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.pin-pulse-origin {
+  animation: markerPulse 2s infinite;
+}
+
+/* Personalización minimalista de los controles de zoom de Leaflet */
+.leaflet-bar {
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.leaflet-bar a {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #334155 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  transition: all 0.15s ease-in-out;
+}
+
+.leaflet-bar a:hover {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Popups minimalistas */
+.leaflet-popup-content-wrapper {
+  border-radius: 10px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 10px 14px !important;
+  line-height: 1.4 !important;
+  font-size: 12px !important;
+}

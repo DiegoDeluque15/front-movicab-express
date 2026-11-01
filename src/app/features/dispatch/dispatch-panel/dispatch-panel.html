@@ -1,0 +1,266 @@
+<div class="space-y-6">
+    <app-page-header title="Central de Despacho" subtitle="Supervisión cartográfica, carreras pendientes y asignación manual de recursos">
+        <button pButton icon="pi pi-refresh" label="Actualizar Tablero" class="p-button-outlined text-sm"
+            (click)="refreshAll()"></button>
+    </app-page-header>
+
+    <!-- Resumen Superior de Recursos Operativos -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg">
+                <i class="pi pi-clock"></i>
+            </div>
+            <div>
+                <span class="text-xs text-slate-500 block">Carreras Pendientes</span>
+                <span class="text-xl font-black text-slate-800">{{ pendingTrips().length }}</span>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
+                <i class="pi pi-user-check"></i>
+            </div>
+            <div>
+                <span class="text-xs text-slate-500 block">Conductores Libres</span>
+                <span class="text-xl font-black text-emerald-700">{{ availableShifts().length }}</span>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+                <i class="pi pi-car"></i>
+            </div>
+            <div>
+                <span class="text-xs text-slate-500 block">Vehículos en Turno</span>
+                <span class="text-xl font-black text-blue-700">{{ availableShifts().length }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa Operativo de Despacho -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+                <i class="pi pi-map text-blue-600"></i>
+                <span class="font-bold text-slate-800 text-sm">Monitoreo Satelital de la Flota</span>
+                @if (selectedTripForMap(); as st) {
+                <span class="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded">
+                    Visualizando Carrera #{{ st.id }}
+                </span>
+                }
+            </div>
+
+            <div class="flex items-center gap-3 text-xs">
+                <span class="flex items-center gap-1.5 font-medium text-slate-600">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span> Conductor Libre
+                </span>
+                <span class="flex items-center gap-1.5 font-medium text-slate-600">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span> Ruta Activa
+                </span>
+            </div>
+        </div>
+
+        <app-interactive-map
+            [origin]="selectedTripForMap()?.origin_lat ? { lat: selectedTripForMap()!.origin_lat!, lng: selectedTripForMap()!.origin_lng!, address: selectedTripForMap()!.origin_address || '' } : null"
+            [destination]="selectedTripForMap()?.destination_lat ? { lat: selectedTripForMap()!.destination_lat!, lng: selectedTripForMap()!.destination_lng!, address: selectedTripForMap()!.destination_address || '' } : null"
+            [dispatchResources]="dispatchMarkers()"
+            interactiveMode="dispatch_overview"
+            height="360px"
+            (resourceSelected)="onMarkerResourceSelected($event)"
+        />
+    </div>
+
+    <!-- Tabla de Carreras Pendientes de Asignación -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+            <span class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="pi pi-inbox text-amber-500"></i> Cola de Solicitudes Pendientes
+            </span>
+            <span class="text-xs text-slate-500 font-medium">
+                {{ pendingTrips().length }} solicitudes requieren atención
+            </span>
+        </div>
+
+        <p-table [value]="pendingTrips()" [loading]="loadingTrips()" responsiveLayout="scroll" styleClass="p-datatable-sm">
+            <ng-template #header>
+                <tr>
+                    <th class="w-16">ID</th>
+                    <th>Solicitado</th>
+                    <th>Pasajero</th>
+                    <th>Origen → Destino</th>
+                    <th>Tarifa Est.</th>
+                    <th class="w-48 text-center">Acciones</th>
+                </tr>
+            </ng-template>
+
+            <ng-template #body let-trip>
+                <tr (click)="selectTripForMap(trip)"
+                    [class.bg-amber-50]="selectedTripForMap()?.id === trip.id"
+                    class="hover:bg-amber-50/50 transition-colors cursor-pointer">
+                    <td class="font-mono font-bold text-slate-800">#{{ trip.id }}</td>
+                    <td class="text-xs text-slate-500 whitespace-nowrap">
+                        {{ trip.createdAt || trip.created_at | date:'HH:mm:ss' }}
+                    </td>
+                    <td class="text-sm">
+                        <span class="font-semibold text-slate-800 block">{{ trip.passenger?.name || 'Pasajero' }}</span>
+                        @if (trip.passenger?.phone) {
+                        <span class="text-xs text-slate-400 font-mono">{{ trip.passenger?.phone }}</span>
+                        }
+                    </td>
+                    <td class="text-xs space-y-1">
+                        <div class="flex items-center gap-1.5 text-slate-700">
+                            <i class="pi pi-map-marker text-emerald-500"></i>
+                            <span class="truncate max-w-xs">{{ trip.origin_address || 'Punto de partida' }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-slate-600">
+                            <i class="pi pi-flag text-red-500"></i>
+                            <span class="truncate max-w-xs">{{ trip.destination_address || 'Punto de llegada' }}</span>
+                        </div>
+                    </td>
+                    <td class="font-bold text-slate-800 text-sm">
+                        ${{ trip.estimated_price || 0 | number:'1.0-0' }}
+                    </td>
+                    <td class="text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button type="button" pButton icon="pi pi-map" size="small" [text]="true"
+                                title="Ver en mapa" (click)="selectTripForMap(trip); $event.stopPropagation()"></button>
+                            <p-button label="Asignar" icon="pi pi-user-plus" severity="warn" size="small"
+                                (onClick)="openAssignModal(trip); $event.stopPropagation()" />
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="6">
+                        <app-empty-state icon="pi-check-circle" title="Cola al día"
+                            message="No hay carreras pendientes de asignación en este momento. Todas las unidades están despachadas." />
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <!-- Tabla de Recursos Disponibles (Conductores y Vehículos) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+            <span class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="pi pi-users text-emerald-600"></i> Recursos Operativos Disponibles
+            </span>
+            <span class="text-xs text-slate-500 font-medium">
+                Sin carrera activa en este momento
+            </span>
+        </div>
+
+        <p-table [value]="availableShifts()" [loading]="loadingResources()" responsiveLayout="scroll" styleClass="p-datatable-sm">
+            <ng-template #header>
+                <tr>
+                    <th>Turno</th>
+                    <th>Conductor Disponible</th>
+                    <th>Vehículo / Placa</th>
+                    <th>Última Posición Conocida</th>
+                </tr>
+            </ng-template>
+
+            <ng-template #body let-res>
+                <tr>
+                    <td class="text-xs font-semibold text-slate-700">{{ res.shift_name }}</td>
+                    <td class="text-sm">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-user text-emerald-500"></i>
+                            <span class="font-bold text-slate-800">{{ res.driver.name }}</span>
+                        </div>
+                    </td>
+                    <td class="text-sm">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-car text-blue-500"></i>
+                            <span class="font-semibold text-slate-700">{{ res.vehicle.plate }}</span>
+                        </div>
+                    </td>
+                    <td class="text-xs text-slate-500 font-mono">
+                        @if (res.driver.current_lat && res.driver.current_lng) {
+                        <span>{{ res.driver.current_lat }}, {{ res.driver.current_lng }}</span>
+                        } @else {
+                        <span class="text-slate-400 italic">En base / sin GPS reciente</span>
+                        }
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="4">
+                        <app-empty-state icon="pi-exclamation-triangle" title="Sin unidades libres"
+                            message="Todos los conductores y vehículos en turno están actualmente ocupados en servicios activos." />
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</div>
+
+<!-- Modal para Asignación Manual -->
+@if (showAssignModal() && selectedTrip(); as trip) {
+<p-dialog [(visible)]="showAssignModal" [modal]="true" header="Asignación Manual de Carrera" [style]="{ width: '92vw', maxWidth: '520px' }">
+    <div class="space-y-4 py-2 text-sm">
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-1">
+            <div class="flex justify-between font-bold text-slate-800">
+                <span>Carrera #{{ trip.id }}</span>
+                <span class="text-blue-700">${{ trip.estimated_price || 0 | number:'1.0-0' }}</span>
+            </div>
+            <p class="text-slate-600">Pasajero: <b>{{ trip.passenger?.name }}</b></p>
+            <p class="text-slate-600 truncate">Origen: {{ trip.origin_address || 'Punto origen' }}</p>
+            <p class="text-slate-600 truncate">Destino: {{ trip.destination_address || 'Punto destino' }}</p>
+        </div>
+
+        <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 uppercase">Seleccionar Unidad Disponible *</label>
+            @if (availableShifts().length === 0) {
+            <p-message severity="warn" styleClass="w-full text-xs">
+                No hay unidades libres en este momento. Debes esperar a que una carrera en curso finalice.
+            </p-message>
+            } @else {
+            <p-select [options]="availableShifts()" [(ngModel)]="selectedShiftResource"
+                optionLabel="shift_name" placeholder="Elige un conductor y vehículo libre"
+                styleClass="w-full text-sm">
+                <ng-template #selectedItem let-selected>
+                    <div class="flex items-center gap-2 text-xs">
+                        <i class="pi pi-car text-blue-600"></i>
+                        <span><b>{{ selected.driver.name }}</b> (Móvil: {{ selected.vehicle.plate }})</span>
+                    </div>
+                </ng-template>
+                <ng-template #item let-res>
+                    <div class="flex items-center justify-between w-full text-xs py-1">
+                        <span class="font-bold text-slate-800">{{ res.driver.name }}</span>
+                        <span class="text-slate-500 font-mono">{{ res.vehicle.plate }} ({{ res.shift_name }})</span>
+                    </div>
+                </ng-template>
+            </p-select>
+            }
+        </div>
+
+        <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-slate-700">Instrucciones o Notas de Despacho (opcional)</label>
+            <input type="text" pInputText [(ngModel)]="assignNotes"
+                placeholder="Ej. Pasajero espera en puerta principal, confirmar llegada por radio"
+                class="w-full text-sm" />
+        </div>
+
+        @if (assignError()) {
+        <p-message severity="error" styleClass="w-full text-xs">{{ assignError() }}</p-message>
+        }
+    </div>
+
+    <ng-template #footer>
+        <div class="flex gap-2 justify-end">
+            <p-button label="Cancelar" icon="pi pi-times" [text]="true"
+                (onClick)="showAssignModal.set(false)" />
+            <p-button label="Confirmar Asignación" icon="pi pi-check" severity="warn"
+                [disabled]="!selectedShiftResource()"
+                [loading]="isAssigning()"
+                (onClick)="confirmManualAssignment()" />
+        </div>
+    </ng-template>
+</p-dialog>
+}

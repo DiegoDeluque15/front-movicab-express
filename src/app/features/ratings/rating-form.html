@@ -1,0 +1,66 @@
+<app-page-header
+  title="Nueva Calificación de Carrera"
+  subtitle="Registra la puntuación y comentarios del pasajero sobre el servicio"
+/>
+
+<div class="card max-w-2xl mx-auto">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+    <!-- Carrera -->
+    <div class="field mb-4">
+      <label for="trip_id" class="block font-semibold mb-1">Carrera a Calificar <span class="text-red-500">*</span></label>
+      <p-select
+        inputId="trip_id"
+        formControlName="trip_id"
+        [options]="trips()"
+        optionLabel="id"
+        optionValue="id"
+        placeholder="Selecciona la carrera"
+        class="w-full"
+        [filter]="true"
+      >
+        <ng-template #selectedItem let-item>
+          <span>Carrera #{{ item.id }} — {{ item.passenger?.name || 'Sin pasajero' }} ({{ item.status }})</span>
+        </ng-template>
+        <ng-template #item let-item>
+          <div class="flex justify-between items-center w-full">
+            <span>#{{ item.id }} — {{ item.passenger?.name || 'Sin pasajero' }}</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">{{ item.status }}</span>
+          </div>
+        </ng-template>
+      </p-select>
+      @if (form.get('trip_id')?.invalid && form.get('trip_id')?.touched) {
+        <small class="text-red-500">Debe seleccionar una carrera.</small>
+      }
+    </div>
+
+    <!-- Puntuación / Estrellas -->
+    <div class="field mb-4">
+      <label class="block font-semibold mb-1">Puntuación (1 a 5 Estrellas) <span class="text-red-500">*</span></label>
+      <div class="p-3 bg-slate-50 border rounded-lg flex items-center gap-3">
+        <p-rating formControlName="score" [stars]="5" />
+        <span class="text-sm font-semibold text-slate-600">({{ form.get('score')?.value }} de 5)</span>
+      </div>
+    </div>
+
+    <!-- Comentarios -->
+    <div class="field mb-6">
+      <label for="comment" class="block font-semibold mb-1">Comentario / Opinión</label>
+      <textarea
+        id="comment"
+        pTextarea
+        formControlName="comment"
+        rows="3"
+        class="w-full"
+        placeholder="Comentario sobre la puntualidad, atención y estado del vehículo..."
+      ></textarea>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex gap-3 justify-end">
+      <p-button type="button" label="Cancelar" [text]="true" severity="secondary" (onClick)="cancel()" />
+      <p-button type="submit" label="Guardar Calificación" [loading]="loading()" icon="pi pi-check" />
+    </div>
+
+  </form>
+</div>

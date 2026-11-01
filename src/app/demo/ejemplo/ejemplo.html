@@ -1,0 +1,44 @@
+<p-card header="Componente de Ejemplo · PrimeNG + Signals">
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <span class="text-sm text-slate-500">Producto</span>
+        <h2 class="text-xl font-bold text-slate-800">{{ producto().nombre }}</h2>
+      </div>
+      <p-tag [value]="estadoTexto()" [severity]="producto().activo ? 'success' : 'warn'" />
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-4 rounded-lg bg-slate-100 flex flex-col gap-1">
+        <span class="text-xs text-slate-500 uppercase font-semibold">Precio Base</span>
+        <span class="text-2xl font-bold text-slate-900">${{ producto().precio | number }}</span>
+      </div>
+      <div class="p-4 rounded-lg bg-indigo-50 flex flex-col gap-1">
+        <span class="text-xs text-indigo-500 uppercase font-semibold">Precio con IVA (19%)</span>
+        <span class="text-2xl font-bold text-indigo-700">${{ precioFinal() | number }}</span>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-medium text-slate-700">Modificar nombre:</label>
+      <input pInputText type="text" [value]="producto().nombre" (input)="cambiarNombre($event)" class="w-full" />
+    </div>
+
+    <div class="flex flex-wrap gap-2 pt-2">
+      <p-button label="+1000" icon="pi pi-plus" (click)="variarPrecio(1000)" />
+      <p-button label="-1000" icon="pi pi-minus" severity="secondary" (click)="variarPrecio(-1000)" />
+      <p-button [label]="producto().activo ? 'Desactivar' : 'Activar'" icon="pi pi-power-off" severity="warn" (click)="alternarEstado()" />
+      <p-button label="Reiniciar" icon="pi pi-refresh" severity="help" [outlined]="true" (click)="reiniciar()" />
+    </div>
+
+    @if (producto().activo) {
+      <p-message severity="success" variant="simple">
+        Producto activo: la API lo devolvería en <code>GET /api/productos</code>.
+      </p-message>
+    } @else {
+      <p-message severity="warn" variant="simple">
+        Producto inactivo: el borrado lógico lo oculta de las listas.
+      </p-message>
+    }
+  </div>
+</p-card>

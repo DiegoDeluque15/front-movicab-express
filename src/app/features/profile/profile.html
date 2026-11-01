@@ -1,0 +1,122 @@
+<app-page-header
+  title="Mi Perfil y Permisos Efectivos"
+  subtitle="Identidad autenticada en MoviCab Express y catálogo granular de permisos RBAC"
+>
+  <p-button
+    label="Cerrar Sesión"
+    icon="pi pi-sign-out"
+    severity="danger"
+    [text]="true"
+    (onClick)="logout()"
+  />
+</app-page-header>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+  <!-- Tarjeta de Identidad del Usuario (1 Columna) -->
+  <div class="card p-6 bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+    <div>
+      <div class="flex items-center gap-4 mb-6">
+        <div class="w-16 h-16 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-2xl border-2 border-indigo-200">
+          {{ user()?.username ? user()!.username.charAt(0).toUpperCase() : 'U' }}
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">{{ user()?.username || 'Usuario' }}</h2>
+          <span class="text-xs text-slate-400 font-mono">ID: #{{ user()?.id }}</span>
+          <div class="mt-1">
+            <p-tag [value]="user()?.status === 'active' ? 'Activo' : (user()?.status || 'Activo')" severity="success" />
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3 text-sm pt-4 border-t border-slate-100">
+        <div>
+          <span class="text-xs text-slate-400 font-semibold uppercase">Correo Electrónico</span>
+          <p class="font-medium text-slate-700">{{ user()?.email }}</p>
+        </div>
+
+        <div>
+          <span class="text-xs text-slate-400 font-semibold uppercase">Estado de Sesión</span>
+          <p class="text-emerald-600 font-semibold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Autenticado con JWT y Refresh Token
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-500">
+      <i class="pi pi-shield mr-1 text-indigo-500"></i>
+      Tu sesión cuenta con rotación automática mediante refresh tokens para garantizar la seguridad de tus operaciones.
+    </div>
+  </div>
+
+  <!-- Tarjeta de Permisos Efectivos RBAC (2 Columnas) -->
+  <div class="lg:col-span-2 card p-6 bg-white rounded-xl shadow-sm border border-slate-100">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-slate-100">
+      <div>
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <i class="pi pi-lock-open text-emerald-600"></i>
+          Permisos Efectivos Concedidos
+        </h3>
+        <p class="text-xs text-slate-500">
+          Total de operaciones autorizadas por la matriz RBAC: <strong>{{ permissions().length }}</strong>
+        </p>
+      </div>
+
+      <div class="w-full sm:w-64">
+        <input
+          type="text"
+          pInputText
+          placeholder="Buscar recurso o método..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          class="w-full text-xs"
+        />
+      </div>
+    </div>
+
+    <p-table
+      [value]="filteredPermissions"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="8"
+      [rowsPerPageOptions]="[8, 16, 32]"
+      styleClass="p-datatable-sm p-datatable-striped"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 7rem">Método</th>
+          <th>Ruta / Recurso Autorizado</th>
+          <th style="width: 10rem">Rol Otorgante</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-perm>
+        <tr>
+          <td>
+            <p-tag [value]="perm.method" [severity]="getMethodSeverity(perm.method)" />
+          </td>
+          <td class="font-mono text-xs text-slate-700">
+            {{ perm.path }}
+          </td>
+          <td>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+              {{ perm.role_name || 'ADMIN' }}
+            </span>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #empty>
+        <tr>
+          <td colspan="3" class="text-center py-6 text-sm text-slate-400">
+            No se encontraron permisos coincidentes
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+</div>
+

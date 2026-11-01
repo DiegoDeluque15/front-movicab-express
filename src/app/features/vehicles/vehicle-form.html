@@ -1,0 +1,66 @@
+<app-page-header [title]="isEdit() ? 'Editar Vehículo' : 'Nuevo Vehículo'">
+    <p-button label="Volver a la lista" icon="pi pi-arrow-left" severity="secondary" [text]="true"
+        routerLink="/vehicles" />
+</app-page-header>
+
+@if (loading()) {
+<div class="p-6 text-center text-slate-400">
+    <i class="pi pi-spin pi-spinner text-2xl mr-2"></i>
+    Cargando datos...
+</div>
+} @else {
+<div class="mx-auto max-w-2xl rounded-lg bg-white p-6 shadow-sm">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+
+        <!-- Nombre / Modelo -->
+        <div class="flex flex-col gap-1">
+            <label for="name" class="text-sm font-semibold text-slate-700">Nombre o Modelo del Vehículo *</label>
+            <input id="name" type="text" pInputText formControlName="name" placeholder="Ej. Chevrolet Spark GT"
+                class="w-full" />
+            @if (form.get('name')?.touched && form.get('name')?.hasError('required')) {
+            <small class="text-red-500">El nombre o modelo es obligatorio.</small>
+            }
+        </div>
+
+        <!-- Empresa Asignada -->
+        <div class="flex flex-col gap-1">
+            <label for="company_id" class="text-sm font-semibold text-slate-700">Empresa Afiliada *</label>
+            <p-select inputId="company_id" [options]="companies()" formControlName="company_id" optionLabel="legal_name"
+                optionValue="id" placeholder="Seleccione la empresa" styleClass="w-full" />
+            @if (form.get('company_id')?.touched && form.get('company_id')?.hasError('required')) {
+            <small class="text-red-500">Debe seleccionar una empresa.</small>
+            }
+        </div>
+
+        <!-- Tipo de Vehículo -->
+        <div class="flex flex-col gap-1">
+            <label for="vehicle_type_id" class="text-sm font-semibold text-slate-700">Tipo de Vehículo</label>
+            <p-select inputId="vehicle_type_id" [options]="vehicleTypes()" formControlName="vehicle_type_id"
+                optionLabel="name" optionValue="id" placeholder="Seleccione un tipo (opcional)" [showClear]="true"
+                styleClass="w-full" />
+        </div>
+
+        <!-- Descripción o Placa -->
+        <div class="flex flex-col gap-1">
+            <label for="description" class="text-sm font-semibold text-slate-700">Descripción / Placa / Detalles</label>
+            <textarea id="description" pTextarea formControlName="description" rows="3"
+                placeholder="Ej. Placa UTL-456, color blanco, modelo 2023..." class="w-full"></textarea>
+        </div>
+
+        <!-- Estado -->
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-semibold text-slate-700">Estado del Vehículo</label>
+            <p-selectbutton [options]="statusOptions" formControlName="status" optionLabel="label"
+                optionValue="value" />
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="mt-4 flex justify-end gap-3 border-t border-slate-100 pt-4">
+            <p-button type="button" label="Cancelar" severity="secondary" [text]="true" routerLink="/vehicles" />
+            <p-button type="submit" [label]="isEdit() ? 'Guardar Cambios' : 'Registrar Vehículo'" icon="pi pi-check"
+                [loading]="saving()" />
+        </div>
+
+    </form>
+</div>
+}

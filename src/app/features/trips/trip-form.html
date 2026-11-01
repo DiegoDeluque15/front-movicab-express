@@ -1,0 +1,90 @@
+<app-page-header
+  title="Solicitar Nueva Carrera"
+  subtitle="Registra un nuevo servicio de transporte vinculando pasajero, turno de conductor y tarifa"
+/>
+
+<div class="card max-w-2xl mx-auto">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+    <!-- Pasajero -->
+    <div class="field mb-4">
+      <label for="passenger_id" class="block font-semibold mb-1">Pasajero <span class="text-red-500">*</span></label>
+      <p-select
+        inputId="passenger_id"
+        formControlName="passenger_id"
+        [options]="passengers()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecciona el pasajero"
+        class="w-full"
+        [filter]="true"
+        filterBy="name"
+      />
+      @if (form.get('passenger_id')?.invalid && form.get('passenger_id')?.touched) {
+        <small class="text-red-500">Debe seleccionar un pasajero.</small>
+      }
+    </div>
+
+    <!-- Turno (Conductor + Vehículo) -->
+    <div class="field mb-4">
+      <label for="shift_id" class="block font-semibold mb-1">Turno Activo <span class="text-red-500">*</span></label>
+      <p-select
+        inputId="shift_id"
+        formControlName="shift_id"
+        [options]="shifts()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecciona el turno asignado"
+        class="w-full"
+        [filter]="true"
+        filterBy="name"
+      />
+      @if (form.get('shift_id')?.invalid && form.get('shift_id')?.touched) {
+        <small class="text-red-500">Debe seleccionar un turno.</small>
+      }
+    </div>
+
+    <!-- Tarifa -->
+    <div class="field mb-4">
+      <label for="fare_id" class="block font-semibold mb-1">Esquema Tarifario <span class="text-red-500">*</span></label>
+      <p-select
+        inputId="fare_id"
+        formControlName="fare_id"
+        [options]="fares()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecciona la tarifa a aplicar"
+        class="w-full"
+      />
+      @if (form.get('fare_id')?.invalid && form.get('fare_id')?.touched) {
+        <small class="text-red-500">Debe seleccionar una tarifa.</small>
+      }
+    </div>
+
+    <!-- Notas -->
+    <div class="field mb-6">
+      <label for="notes" class="block font-semibold mb-1">Notas / Origen y Destino</label>
+      <textarea
+        id="notes"
+        pTextarea
+        formControlName="notes"
+        rows="3"
+        class="w-full"
+        placeholder="Dirección de recogida, destino o indicaciones particulares"
+      ></textarea>
+    </div>
+
+    <div class="p-4 mb-6 rounded-lg bg-emerald-50 border border-emerald-200 text-sm text-emerald-800">
+      <i class="pi pi-info-circle mr-1"></i>
+      Toda nueva carrera inicia automáticamente en estado <strong>Solicitada</strong>. Podrás avanzar su estado operativo (Aceptada &rarr; En curso &rarr; Cerrada) desde la lista de carreras.
+    </div>
+
+    <!-- Botones -->
+    <div class="flex gap-3 justify-end">
+      <p-button type="button" label="Cancelar" [text]="true" severity="secondary" (onClick)="cancel()" />
+      <p-button type="submit" label="Crear Carrera" [loading]="loading()" icon="pi pi-check" />
+    </div>
+
+  </form>
+</div>
+

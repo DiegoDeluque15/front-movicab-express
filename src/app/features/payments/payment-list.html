@@ -1,0 +1,60 @@
+<app-page-header title="Pagos" subtitle="Registro contable de pagos recibidos por servicios">
+  <p-button label="Registrar pago" icon="pi pi-plus" routerLink="/payments/new" />
+</app-page-header>
+
+<p-table
+  [value]="payments()"
+  [loading]="loading()"
+  [paginator]="true"
+  [rows]="10"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  [tableStyle]="{ 'min-width': '55rem' }"
+  styleClass="p-datatable-sm p-datatable-striped"
+>
+  <ng-template #header>
+    <tr>
+      <th>ID</th>
+      <th>Referencia</th>
+      <th>Método de Pago</th>
+      <th>Monto</th>
+      <th>Fecha de Pago</th>
+      <th>Estado</th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-payment>
+    <tr>
+      <td><strong>#{{ payment.id }}</strong></td>
+      <td>
+        <span class="inline-flex items-center gap-1 font-semibold text-slate-700">
+          <i class="pi pi-file text-xs text-slate-500"></i>
+          {{ payment.reference_type }} #{{ payment.reference_id }}
+        </span>
+      </td>
+      <td>
+        <p-tag
+          [value]="(payment.payment_method || 'efectivo') | uppercase"
+          [severity]="getMethodSeverity(payment.payment_method)"
+        />
+      </td>
+      <td class="font-semibold text-emerald-600">
+        ${{ payment.amount | number:'1.2-2' }}
+      </td>
+      <td>{{ payment.paid_at | date:'dd/MM/yyyy HH:mm' }}</td>
+      <td>
+        <p-tag
+          [value]="payment.status || 'Completado'"
+          severity="success"
+        />
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template #empty>
+    <tr>
+      <td colspan="6" class="text-center py-8">
+        <app-empty-state icon="pi pi-wallet" message="No hay pagos registrados. Haz clic en 'Registrar pago' para agregar uno." />
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

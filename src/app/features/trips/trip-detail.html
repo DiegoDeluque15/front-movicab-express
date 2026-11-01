@@ -1,0 +1,251 @@
+<app-page-header
+  [title]="'Detalle de Carrera #' + (tripId || '')"
+  subtitle="Información integral del servicio de transporte, cobro y satisfacción del cliente"
+>
+  <div class="flex gap-2">
+    <p-button
+      label="Seguimiento Satelital"
+      icon="pi pi-compass"
+      severity="success"
+      [routerLink]="['/trips', tripId, 'live']"
+    />
+    <p-button
+      label="Volver a la lista"
+      icon="pi pi-arrow-left"
+      [text]="true"
+      severity="secondary"
+      routerLink="/trips"
+    />
+    @if (trip() && trip()!.status !== 'cerrada' && trip()!.status !== 'cancelada') {
+      <p-button
+        label="Cambiar Estado"
+        icon="pi pi-sync"
+        severity="help"
+        (onClick)="openStatusModal()"
+      />
+    }
+  </div>
+</app-page-header>
+
+@if (loading()) {
+  <div class="p-8 text-center text-slate-400">
+    <i class="pi pi-spin pi-spinner text-3xl mb-2"></i>
+    <p>Cargando información del viaje...</p>
+  </div>
+} @else if (trip()) {
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Tarjeta Principal: Datos de la Carrera (2 Columnas) -->
+    <div class="lg:col-span-2 flex flex-col gap-6">
+      <div class="card p-6 bg-white rounded-xl shadow-sm border border-slate-100">
+        <div class="flex justify-between items-center pb-4 mb-4 border-b border-slate-100">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800">Servicio de Transporte</h2>
+            <p class="text-sm text-slate-500">Registrado el {{ trip()!.started_at | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-semibold text-slate-600">Estado:</span>
+            <p-tag
+              [value]="getStatusLabel(trip()!.status)"
+              [severity]="getStatusSeverity(trip()!.status)"
+              styleClass="text-sm px-3 py-1"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <!-- Pasajero -->
+          <div class="p-4 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Pasajero</span>
+            <p class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="pi pi-user text-indigo-500"></i>
+              {{ trip()!.passenger?.name ?? ('Pasajero #' + trip()!.passenger_id) }}
+            </p>
+          </div>
+
+          <!-- Turno / Conductor -->
+          <div class="p-4 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Turno Asignado</span>
+            <p class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="pi pi-clock text-amber-500"></i>
+              {{ trip()!.shift?.name ?? ('Turno #' + trip()!.shift_id) }}
+            </p>
+          </div>
+
+          <!-- Tarifa -->
+          <div class="p-4 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Tarifa Aplicada</span>
+            <p class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="pi pi-dollar text-emerald-500"></i>
+              {{ trip()!.fare?.name ?? ('Tarifa #' + trip()!.fare_id) }}
+            </p>
+          </div>
+
+          <!-- Total Liquidado -->
+          <div class="p-4 rounded-lg bg-emerald-50 border border-emerald-100">
+            <span class="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1">Valor Total</span>
+            <p class="text-xl font-extrabold text-emerald-700">
+              @if (trip()!.total !== null && trip()!.total !== undefined) {
+                ${{ trip()!.total | number:'1.2-2' }}
+              } @else {
+                <span class="text-sm font-normal text-slate-400 italic">Pendiente por cierre</span>
+              }
+            </p>
+          </div>
+        </div>
+
+        <!-- Notas / Indicaciones -->
+        @if (trip()!.notes) {
+          <div class="mt-6 p-4 rounded-lg bg-sky-50 border border-sky-100 text-sm">
+            <span class="block text-xs font-semibold text-sky-700 uppercase tracking-wider mb-1">
+              <i class="pi pi-map-marker mr-1"></i> Indicaciones / Destino
+            </span>
+            <p class="text-slate-700 whitespace-pre-line">{{ trip()!.notes }}</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Columna Lateral: Pago y Calificación (1 Columna) -->
+    <div class="flex flex-col gap-6">
+
+      <!-- Tarjeta de Pago -->
+      <div class="card p-6 bg-white rounded-xl shadow-sm border border-slate-100">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4 pb-2 border-b">
+          <i class="pi pi-wallet text-emerald-600"></i>
+          Registro de Cobro
+        </h3>
+
+        @if (payment()) {
+          <div class="flex flex-col gap-3 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Comprobante:</span>
+              <strong class="text-slate-800">#{{ payment()!.id }}</strong>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Método de Pago:</span>
+              <p-tag [value]="(payment()!.payment_method || 'efectivo') | uppercase" severity="info" />
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Monto Cobrado:</span>
+              <span class="text-lg font-bold text-emerald-600">${{ payment()!.amount | number:'1.2-2' }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Fecha de Pago:</span>
+              <span class="text-slate-700">{{ payment()!.paid_at | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Estado:</span>
+              <p-tag [value]="payment()!.status || 'registrado'" severity="success" />
+            </div>
+          </div>
+        } @else {
+          <div class="text-center py-6 text-slate-400">
+            <i class="pi pi-exclamation-circle text-2xl text-amber-500 mb-2"></i>
+            <p class="text-sm">No se ha registrado cobro para esta carrera.</p>
+            @if (trip()!.status === 'cerrada') {
+              <div class="mt-4">
+                <p-button
+                  label="Registrar Pago"
+                  icon="pi pi-plus"
+                  size="small"
+                  routerLink="/payments/new"
+                />
+              </div>
+            } @else {
+              <small class="block text-xs text-slate-400 mt-2">
+                (El cobro se habilita cuando la carrera pasa a estado "Cerrada")
+              </small>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Tarjeta de Calificación -->
+      <div class="card p-6 bg-white rounded-xl shadow-sm border border-slate-100">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4 pb-2 border-b">
+          <i class="pi pi-star text-amber-500"></i>
+          Calificación del Pasajero
+        </h3>
+
+        @if (rating()) {
+          <div class="flex flex-col gap-3 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Puntuación:</span>
+              <div class="flex items-center gap-2">
+                <p-rating [ngModel]="rating()!.score" [readonly]="true" />
+                <span class="font-bold text-slate-700">({{ rating()!.score }}/5)</span>
+              </div>
+            </div>
+            @if (rating()!.comment) {
+              <div class="mt-2 p-3 bg-slate-50 rounded-lg border text-slate-700 text-xs italic">
+                "{{ rating()!.comment }}"
+              </div>
+            }
+            <div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t">
+              <span>Registrada el:</span>
+              <span>{{ (rating()!.createdAt || rating()!.created_at) | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="text-center py-6 text-slate-400">
+            <i class="pi pi-comment text-2xl text-slate-300 mb-2"></i>
+            <p class="text-sm">Sin calificación registrada aún.</p>
+            <div class="mt-4">
+              <p-button
+                label="Calificar Viaje"
+                icon="pi pi-star"
+                size="small"
+                severity="secondary"
+                routerLink="/ratings/new"
+              />
+            </div>
+          </div>
+        }
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- Diálogo Modal para Cambio de Estado de Carrera -->
+<p-dialog
+  header="Actualizar Estado del Servicio"
+  [visible]="statusDialogVisible()"
+  (visibleChange)="statusDialogVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: '25rem' }"
+>
+  <div class="flex flex-col gap-4 py-2">
+    <div class="flex flex-col gap-1">
+      <label for="nextStatus" class="text-sm font-semibold text-slate-700">Siguiente Estado Permitido</label>
+      <p-select
+        inputId="nextStatus"
+        [options]="availableTransitions()"
+        [ngModel]="selectedNewStatus()"
+        (ngModelChange)="selectedNewStatus.set($event)"
+        optionLabel="label"
+        optionValue="value"
+        class="w-full"
+      />
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button
+        label="Cancelar"
+        [text]="true"
+        severity="secondary"
+        (onClick)="statusDialogVisible.set(false)"
+      />
+      <p-button
+        label="Confirmar"
+        icon="pi pi-check"
+        [loading]="statusChanging()"
+        (onClick)="confirmStatusChange()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+

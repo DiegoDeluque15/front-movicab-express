@@ -1,0 +1,525 @@
+<app-page-header
+  title="Administración de Seguridad y RBAC"
+  subtitle="Gestión de identidades, roles, catálogo de recursos y matriz de autorización granular"
+>
+</app-page-header>
+
+<!-- Navegación por pestañas -->
+<div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3 mb-6">
+  <button
+    type="button"
+    (click)="activeTab.set('users')"
+    [class]="activeTab() === 'users' ? 'bg-indigo-600 text-white font-medium px-4 py-2 rounded-lg shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg'"
+  >
+    <i class="pi pi-users mr-2"></i> Usuarios ({{ users().length }})
+  </button>
+
+  <button
+    type="button"
+    (click)="activeTab.set('roles')"
+    [class]="activeTab() === 'roles' ? 'bg-indigo-600 text-white font-medium px-4 py-2 rounded-lg shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg'"
+  >
+    <i class="pi pi-id-card mr-2"></i> Roles ({{ roles().length }})
+  </button>
+
+  <button
+    type="button"
+    (click)="activeTab.set('resources')"
+    [class]="activeTab() === 'resources' ? 'bg-indigo-600 text-white font-medium px-4 py-2 rounded-lg shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg'"
+  >
+    <i class="pi pi-shield mr-2"></i> Recursos API ({{ resources().length }})
+  </button>
+
+  <button
+    type="button"
+    (click)="activeTab.set('assignments')"
+    [class]="activeTab() === 'assignments' ? 'bg-indigo-600 text-white font-medium px-4 py-2 rounded-lg shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg'"
+  >
+    <i class="pi pi-user-plus mr-2"></i> Asignaciones ({{ assignments().length }})
+  </button>
+
+  <button
+    type="button"
+    (click)="activeTab.set('grants')"
+    [class]="activeTab() === 'grants' ? 'bg-indigo-600 text-white font-medium px-4 py-2 rounded-lg shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg'"
+  >
+    <i class="pi pi-key mr-2"></i> Concesiones RBAC ({{ grants().length }})
+  </button>
+</div>
+
+<!-- ================= TAB 1: USUARIOS ================= -->
+@if (activeTab() === 'users') {
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h3 class="text-lg font-bold text-slate-800">Identidades del Sistema</h3>
+        <p class="text-sm text-slate-500">Cuentas de usuario registradas para autenticación y asignación de roles</p>
+      </div>
+      <p-button label="Nuevo Usuario" icon="pi pi-plus" (onClick)="openCreateUser()" />
+    </div>
+
+    <p-table
+      [value]="users()"
+      [paginator]="true"
+      [rows]="10"
+      [tableStyle]="{ 'min-width': '50rem' }"
+      styleClass="p-datatable-sm p-datatable-striped"
+    >
+      <ng-template #header>
+        <tr>
+          <th>ID</th>
+          <th>Nombre de Usuario</th>
+          <th>Correo Electrónico</th>
+          <th>Estado</th>
+          <th style="width: 8rem">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-u>
+        <tr>
+          <td><strong>#{{ u.id }}</strong></td>
+          <td>
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">
+                {{ u.username.charAt(0).toUpperCase() }}
+              </span>
+              <span class="font-medium text-slate-800">{{ u.username }}</span>
+            </div>
+          </td>
+          <td>{{ u.email }}</td>
+          <td>
+            <p-tag
+              [value]="u.status === 'active' ? 'Activo' : 'Inactivo'"
+              [severity]="u.status === 'active' ? 'success' : 'secondary'"
+            />
+          </td>
+          <td>
+            <p-button
+              [icon]="u.status === 'active' ? 'pi pi-user-minus' : 'pi pi-user-plus'"
+              [severity]="u.status === 'active' ? 'danger' : 'success'"
+              [text]="true"
+              size="small"
+              (onClick)="toggleUserStatus(u)"
+              [title]="u.status === 'active' ? 'Desactivar usuario' : 'Activar usuario'"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #empty>
+        <tr><td colspan="5" class="text-center py-6 text-slate-400">No se encontraron usuarios</td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+}
+
+<!-- ================= TAB 2: ROLES ================= -->
+@if (activeTab() === 'roles') {
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h3 class="text-lg font-bold text-slate-800">Catálogo de Roles</h3>
+        <p class="text-sm text-slate-500">Agrupadores lógicos de permisos funcionales (ADMIN, DESPACHO, etc.)</p>
+      </div>
+      <p-button label="Nuevo Rol" icon="pi pi-plus" (onClick)="openCreateRole()" />
+    </div>
+
+    <p-table
+      [value]="roles()"
+      [paginator]="true"
+      [rows]="10"
+      [tableStyle]="{ 'min-width': '45rem' }"
+      styleClass="p-datatable-sm p-datatable-striped"
+    >
+      <ng-template #header>
+        <tr>
+          <th>ID</th>
+          <th>Nombre del Rol</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-r>
+        <tr>
+          <td><strong>#{{ r.id }}</strong></td>
+          <td>
+            <span class="px-2.5 py-1 bg-slate-100 font-semibold text-slate-800 rounded border border-slate-200">
+              {{ r.name }}
+            </span>
+          </td>
+          <td>{{ r.description || 'Sin descripción' }}</td>
+          <td>
+            <p-tag
+              [value]="r.status === 'active' ? 'Activo' : 'Inactivo'"
+              [severity]="r.status === 'active' ? 'success' : 'secondary'"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #empty>
+        <tr><td colspan="4" class="text-center py-6 text-slate-400">No hay roles registrados</td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+}
+
+<!-- ================= TAB 3: RECURSOS ================= -->
+@if (activeTab() === 'resources') {
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h3 class="text-lg font-bold text-slate-800">Catálogo de Recursos de la API</h3>
+        <p class="text-sm text-slate-500">Pares protegibles (Método HTTP + Ruta) registrados en la matriz RBAC</p>
+      </div>
+      <p-button label="Registrar Recurso" icon="pi pi-plus" (onClick)="openCreateResource()" />
+    </div>
+
+    <p-table
+      [value]="resources()"
+      [paginator]="true"
+      [rows]="12"
+      [rowsPerPageOptions]="[12, 25, 50]"
+      [tableStyle]="{ 'min-width': '55rem' }"
+      styleClass="p-datatable-sm p-datatable-striped"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 5rem">ID</th>
+          <th style="width: 8rem">Método</th>
+          <th>Ruta de Endpoint</th>
+          <th>Descripción</th>
+          <th style="width: 8rem">Estado</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-res>
+        <tr>
+          <td><strong>#{{ res.id }}</strong></td>
+          <td>
+            <p-tag
+              [value]="res.method"
+              [severity]="getMethodSeverity(res.method)"
+            />
+          </td>
+          <td><code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-800 font-mono">{{ res.path }}</code></td>
+          <td>{{ res.description || '—' }}</td>
+          <td>
+            <p-tag
+              [value]="res.status === 'active' ? 'Activo' : 'Inactivo'"
+              [severity]="res.status === 'active' ? 'success' : 'secondary'"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #empty>
+        <tr><td colspan="5" class="text-center py-6 text-slate-400">No hay recursos registrados</td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+}
+
+<!-- ================= TAB 4: ASIGNACIONES ROL-USUARIO ================= -->
+@if (activeTab() === 'assignments') {
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h3 class="text-lg font-bold text-slate-800">Asignaciones de Roles a Usuarios</h3>
+        <p class="text-sm text-slate-500">Relación N:M que determina qué roles posee cada cuenta de usuario</p>
+      </div>
+      <p-button label="Asignar Rol a Usuario" icon="pi pi-plus" (onClick)="openCreateAssign()" />
+    </div>
+
+    <p-table
+      [value]="assignments()"
+      [paginator]="true"
+      [rows]="10"
+      [tableStyle]="{ 'min-width': '50rem' }"
+      styleClass="p-datatable-sm p-datatable-striped"
+    >
+      <ng-template #header>
+        <tr>
+          <th>ID</th>
+          <th>Usuario</th>
+          <th>Rol Asignado</th>
+          <th>Estado</th>
+          <th style="width: 10rem">Acción</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-a>
+        <tr>
+          <td><strong>#{{ a.id }}</strong></td>
+          <td>
+            <div class="font-medium text-slate-800">{{ a.user?.username ?? ('Usuario #' + a.user_id) }}</div>
+            <div class="text-xs text-slate-400">{{ a.user?.email }}</div>
+          </td>
+          <td>
+            <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 font-semibold rounded border border-indigo-200 text-xs">
+              {{ a.role?.name ?? ('Rol #' + a.role_id) }}
+            </span>
+          </td>
+          <td>
+            <p-tag
+              [value]="a.status === 'active' ? 'Concedido' : 'Revocado'"
+              [severity]="a.status === 'active' ? 'success' : 'danger'"
+            />
+          </td>
+          <td>
+            <p-button
+              [label]="a.status === 'active' ? 'Revocar' : 'Reactivar'"
+              [icon]="a.status === 'active' ? 'pi pi-ban' : 'pi pi-check'"
+              [severity]="a.status === 'active' ? 'danger' : 'success'"
+              [text]="true"
+              size="small"
+              (onClick)="toggleAssignment(a)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #empty>
+        <tr><td colspan="5" class="text-center py-6 text-slate-400">No hay asignaciones registradas</td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+}
+
+<!-- ================= TAB 5: CONCESIONES RECURSO-ROL (PERMISOS) ================= -->
+@if (activeTab() === 'grants') {
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+      <div>
+        <h3 class="text-lg font-bold text-slate-800">Concesiones de Recursos a Roles (Matriz RBAC)</h3>
+        <p class="text-sm text-slate-500">Permisos granulares que otorgan acceso a endpoints según el rol asignado</p>
+      </div>
+      <div class="flex gap-2">
+        <p-button label="Conceder Permiso" icon="pi pi-plus" (onClick)="openCreateGrant()" />
+      </div>
+    </div>
+
+    <p-table
+      [value]="grants()"
+      [paginator]="true"
+      [rows]="12"
+      [rowsPerPageOptions]="[12, 25, 50]"
+      [tableStyle]="{ 'min-width': '60rem' }"
+      styleClass="p-datatable-sm p-datatable-striped"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 5rem">ID</th>
+          <th style="width: 10rem">Rol Otorgante</th>
+          <th style="width: 8rem">Método</th>
+          <th>Ruta de Recurso</th>
+          <th>Descripción</th>
+          <th style="width: 8rem">Estado</th>
+          <th style="width: 9rem">Acción</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-g>
+        <tr>
+          <td><strong>#{{ g.id }}</strong></td>
+          <td>
+            <span class="px-2 py-0.5 bg-slate-100 font-semibold text-slate-800 rounded text-xs border border-slate-200">
+              {{ g.role?.name ?? ('Rol #' + g.role_id) }}
+            </span>
+          </td>
+          <td>
+            <p-tag
+              [value]="g.resource?.method ?? '—'"
+              [severity]="getMethodSeverity(g.resource?.method ?? '')"
+            />
+          </td>
+          <td><code class="text-xs font-mono bg-slate-50 px-2 py-1 rounded text-slate-800">{{ g.resource?.path ?? '—' }}</code></td>
+          <td class="text-sm text-slate-600">{{ g.resource?.description ?? '—' }}</td>
+          <td>
+            <p-tag
+              [value]="g.status === 'active' ? 'Autorizado' : 'Revocado'"
+              [severity]="g.status === 'active' ? 'success' : 'danger'"
+            />
+          </td>
+          <td>
+            <p-button
+              [label]="g.status === 'active' ? 'Revocar' : 'Reactivar'"
+              [icon]="g.status === 'active' ? 'pi pi-ban' : 'pi pi-check'"
+              [severity]="g.status === 'active' ? 'danger' : 'success'"
+              [text]="true"
+              size="small"
+              (onClick)="toggleGrant(g)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #empty>
+        <tr><td colspan="7" class="text-center py-6 text-slate-400">No hay concesiones registradas</td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+}
+
+<!-- DIÁLOGO CREAR USUARIO -->
+<p-dialog
+  header="Crear Usuario"
+  [visible]="userDialog()"
+  (visibleChange)="userDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '28rem' }"
+>
+  <form [formGroup]="userForm" class="flex flex-col gap-4 py-2">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Nombre de Usuario</label>
+      <input pInputText formControlName="username" placeholder="p. ej. operador1" class="w-full" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Correo Electrónico</label>
+      <input pInputText type="email" formControlName="email" placeholder="operador@movicab.local" class="w-full" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Contraseña Inicial</label>
+      <input pInputText type="password" formControlName="password" placeholder="Mínimo 6 caracteres" class="w-full" />
+    </div>
+  </form>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button label="Cancelar" [text]="true" severity="secondary" (onClick)="userDialog.set(false)" />
+      <p-button label="Guardar Usuario" icon="pi pi-check" [disabled]="userForm.invalid" (onClick)="saveUser()" />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- DIÁLOGO CREAR ROL -->
+<p-dialog
+  header="Crear Nuevo Rol"
+  [visible]="roleDialog()"
+  (visibleChange)="roleDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '28rem' }"
+>
+  <form [formGroup]="roleForm" class="flex flex-col gap-4 py-2">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Nombre del Rol (se guardará en MAYÚSCULAS)</label>
+      <input pInputText formControlName="name" placeholder="p. ej. SUPERVISOR" class="w-full" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Descripción Funcional</label>
+      <input pInputText formControlName="description" placeholder="Responsabilidades asignadas" class="w-full" />
+    </div>
+  </form>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button label="Cancelar" [text]="true" severity="secondary" (onClick)="roleDialog.set(false)" />
+      <p-button label="Guardar Rol" icon="pi pi-check" [disabled]="roleForm.invalid" (onClick)="saveRole()" />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- DIÁLOGO CREAR RECURSO -->
+<p-dialog
+  header="Registrar Recurso API"
+  [visible]="resourceDialog()"
+  (visibleChange)="resourceDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '28rem' }"
+>
+  <form [formGroup]="resourceForm" class="flex flex-col gap-4 py-2">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Método HTTP</label>
+      <p-select
+        formControlName="method"
+        [options]="httpMethods"
+        optionLabel="label"
+        optionValue="value"
+        class="w-full"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Ruta del Endpoint</label>
+      <input pInputText formControlName="path" placeholder="/api/mi-recurso" class="w-full" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Descripción</label>
+      <input pInputText formControlName="description" placeholder="Operación que protege" class="w-full" />
+    </div>
+  </form>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button label="Cancelar" [text]="true" severity="secondary" (onClick)="resourceDialog.set(false)" />
+      <p-button label="Registrar Recurso" icon="pi pi-check" [disabled]="resourceForm.invalid" (onClick)="saveResource()" />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- DIÁLOGO ASIGNAR ROL -->
+<p-dialog
+  header="Asignar Rol a Usuario"
+  [visible]="assignDialog()"
+  (visibleChange)="assignDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '28rem' }"
+>
+  <form [formGroup]="assignForm" class="flex flex-col gap-4 py-2">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Seleccionar Usuario</label>
+      <p-select
+        formControlName="user_id"
+        [options]="users()"
+        optionLabel="username"
+        optionValue="id"
+        placeholder="Seleccione un usuario"
+        class="w-full"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Seleccionar Rol</label>
+      <p-select
+        formControlName="role_id"
+        [options]="roles()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Seleccione un rol"
+        class="w-full"
+      />
+    </div>
+  </form>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button label="Cancelar" [text]="true" severity="secondary" (onClick)="assignDialog.set(false)" />
+      <p-button label="Asignar" icon="pi pi-check" [disabled]="assignForm.invalid" (onClick)="saveAssignment()" />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- DIÁLOGO CONCEDER PERMISO -->
+<p-dialog
+  header="Conceder Recurso a Rol (Permiso)"
+  [visible]="grantDialog()"
+  (visibleChange)="grantDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '32rem' }"
+>
+  <form [formGroup]="grantForm" class="flex flex-col gap-4 py-2">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Rol Destino</label>
+      <p-select
+        formControlName="role_id"
+        [options]="roles()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Seleccione el rol"
+        class="w-full"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-semibold text-slate-700">Recurso a Conceder</label>
+      <p-select
+        formControlName="resource_id"
+        [options]="resources()"
+        optionLabel="path"
+        optionValue="id"
+        placeholder="Seleccione el recurso"
+        class="w-full"
+      />
+    </div>
+  </form>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button label="Cancelar" [text]="true" severity="secondary" (onClick)="grantDialog.set(false)" />
+      <p-button label="Conceder Permiso" icon="pi pi-check" [disabled]="grantForm.invalid" (onClick)="saveGrant()" />
+    </div>
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,46 @@
+<app-page-header title="Calificaciones" subtitle="Opiniones y puntuaciones de los pasajeros sobre sus carreras">
+  <p-button label="Calificar carrera" icon="pi pi-star" routerLink="/ratings/new" />
+</app-page-header>
+
+<p-table [value]="ratings()" [loading]="loading()" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 25, 50]"
+  [tableStyle]="{ 'min-width': '55rem' }" styleClass="p-datatable-sm p-datatable-striped">
+  <ng-template #header>
+    <tr>
+      <th>ID</th>
+      <th>Carrera Asociada</th>
+      <th>Puntuación</th>
+      <th>Comentario</th>
+      <th>Fecha</th>
+      <th style="width: 8rem">Acciones</th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-rating>
+    <tr>
+      <td><strong>#{{ rating.id }}</strong></td>
+      <td>
+        <span class="inline-flex items-center gap-1 font-semibold text-slate-700">
+          <i class="pi pi-compass text-xs text-indigo-500"></i>
+          Carrera #{{ rating.trip_id }}
+        </span>
+      </td>
+      <td>
+        <p-rating [ngModel]="rating.score" [readonly]="true" />
+      </td>
+      <td>{{ rating.comment || '—' }}</td>
+      <td>{{ rating.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+      <td>
+        <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="confirmDelete(rating)" />
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template #empty>
+    <tr>
+      <td colspan="6" class="text-center py-8">
+        <app-empty-state icon="pi pi-star"
+          message="No hay calificaciones registradas aún. Haz clic en 'Calificar carrera' para registrar una." />
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

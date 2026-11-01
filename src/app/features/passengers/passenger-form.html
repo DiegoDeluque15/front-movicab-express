@@ -1,0 +1,80 @@
+<app-page-header [title]="isEdit() ? 'Editar Pasajero' : 'Nuevo Pasajero'">
+    <p-button label="Volver a la lista" icon="pi pi-arrow-left" severity="secondary" [text]="true"
+        routerLink="/passengers" />
+</app-page-header>
+
+@if (loading()) {
+<div class="p-6 text-center text-slate-400">
+    <i class="pi pi-spin pi-spinner text-2xl mr-2"></i>
+    Cargando datos...
+</div>
+} @else {
+<div class="mx-auto max-w-2xl rounded-lg bg-white p-6 shadow-sm">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+
+        <!-- Nombre -->
+        <div class="flex flex-col gap-1">
+            <label for="name" class="text-sm font-semibold text-slate-700">Nombre completo *</label>
+            <input id="name" type="text" pInputText formControlName="name" placeholder="Ej. Carlos Mendoza"
+                class="w-full" />
+            @if (form.get('name')?.touched && form.get('name')?.hasError('required')) {
+            <small class="text-red-500">El nombre es obligatorio.</small>
+            }
+        </div>
+
+        <!-- Correo electrónico -->
+        <div class="flex flex-col gap-1">
+            <label for="email" class="text-sm font-semibold text-slate-700">Correo electrónico *</label>
+            <input id="email" type="email" pInputText formControlName="email" placeholder="ejemplo@correo.com"
+                class="w-full" />
+            @if (form.get('email')?.touched && form.get('email')?.hasError('email')) {
+            <small class="text-red-500">Ingrese un correo válido.</small>
+            }
+        </div>
+
+        <!-- Contraseña -->
+        <div class="flex flex-col gap-1">
+            <label for="password" class="text-sm font-semibold text-slate-700">
+                Contraseña {{ isEdit() ? '(dejar en blanco para no cambiar)' : '*' }}
+            </label>
+            <p-password inputId="password" formControlName="password" [feedback]="false" [toggleMask]="true"
+                styleClass="w-full" inputStyleClass="w-full" placeholder="••••••••" />
+            @if (form.get('password')?.touched && form.get('password')?.hasError('required')) {
+            <small class="text-red-500">La contraseña es obligatoria para nuevos pasajeros.</small>
+            }
+        </div>
+
+        <!-- Teléfono -->
+        <div class="flex flex-col gap-1">
+            <label for="phone" class="text-sm font-semibold text-slate-700">Teléfono *</label>
+            <input id="phone" type="tel" pInputText formControlName="phone" placeholder="Ej. 3001234567"
+                class="w-full" />
+            @if (form.get('phone')?.touched && form.get('phone')?.invalid) {
+            <small class="text-red-500">Ingrese un teléfono válido.</small>
+            }
+        </div>
+
+        <!-- Dirección -->
+        <div class="flex flex-col gap-1">
+            <label for="address" class="text-sm font-semibold text-slate-700">Dirección</label>
+            <input id="address" type="text" pInputText formControlName="address" placeholder="Ej. Calle 123 #45-67"
+                class="w-full" />
+        </div>
+
+        <!-- Estado -->
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-semibold text-slate-700">Estado</label>
+            <p-selectbutton [options]="statusOptions" formControlName="status" optionLabel="label"
+                optionValue="value" />
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="mt-4 flex justify-end gap-3 border-t border-slate-100 pt-4">
+            <p-button type="button" label="Cancelar" severity="secondary" [text]="true" routerLink="/passengers" />
+            <p-button type="submit" [label]="isEdit() ? 'Guardar Cambios' : 'Crear Pasajero'" icon="pi pi-check"
+                [loading]="saving()" />
+        </div>
+
+    </form>
+</div>
+}

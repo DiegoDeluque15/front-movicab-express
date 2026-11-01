@@ -1,0 +1,26 @@
+<div class="flex min-h-screen flex-col bg-slate-100">
+  <app-header (menuRequested)="onMenuToggle()" />
+
+  <div class="flex flex-1">
+    @if (!sidebarCollapsed()) {
+      <aside class="hidden w-72 shrink-0 lg:block">
+        <app-aside (navigated)="mobileOpen.set(false)" />
+      </aside>
+    }
+
+    <main id="contenido" class="min-w-0 flex-1 p-4 sm:p-6">
+      <div class="mx-auto w-full max-w-7xl">
+        <router-outlet />
+      </div>
+    </main>
+  </div>
+
+  <app-footer />
+</div>
+
+<p-drawer [(visible)]="mobileOpen" header="Menú" position="left" styleClass="w-72">
+  <app-aside (navigated)="mobileOpen.set(false)" />
+</p-drawer>
+
+<p-toast position="top-right" />
+<p-confirmdialog />

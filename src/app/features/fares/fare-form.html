@@ -1,0 +1,89 @@
+<app-page-header
+  [title]="isEdit ? 'Editar Tarifa' : 'Nueva Tarifa'"
+  [subtitle]="isEdit ? 'Modifica los datos de la tarifa' : 'Completa los datos para registrar una tarifa'"
+/>
+
+<div class="card max-w-2xl mx-auto">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+    <!-- Nombre -->
+    <div class="field mb-4">
+      <label for="name" class="block font-semibold mb-1">Nombre <span class="text-red-500">*</span></label>
+      <input id="name" pInputText formControlName="name" class="w-full"
+             placeholder="Nombre de la tarifa" />
+      @if (form.get('name')?.invalid && form.get('name')?.touched) {
+        <small class="text-red-500">El nombre es requerido (mín. 2 caracteres).</small>
+      }
+    </div>
+
+    <!-- Valor Base -->
+    <div class="field mb-4">
+      <label for="base_value" class="block font-semibold mb-1">Valor Base <span class="text-red-500">*</span></label>
+      <p-inputnumber
+        inputId="base_value"
+        formControlName="base_value"
+        mode="decimal"
+        [minFractionDigits]="2"
+        [maxFractionDigits]="2"
+        [min]="0"
+        class="w-full"
+        placeholder="0.00"
+      />
+      @if (form.get('base_value')?.invalid && form.get('base_value')?.touched) {
+        <small class="text-red-500">El valor base es requerido y debe ser mayor a 0.</small>
+      }
+    </div>
+
+    <!-- Fechas -->
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div class="field">
+        <label for="valid_from" class="block font-semibold mb-1">Válida Desde <span class="text-red-500">*</span></label>
+        <p-datepicker
+          inputId="valid_from"
+          formControlName="valid_from"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          class="w-full"
+        />
+        @if (form.get('valid_from')?.invalid && form.get('valid_from')?.touched) {
+          <small class="text-red-500">Fecha de inicio requerida.</small>
+        }
+      </div>
+      <div class="field">
+        <label for="valid_until" class="block font-semibold mb-1">Válida Hasta <span class="text-red-500">*</span></label>
+        <p-datepicker
+          inputId="valid_until"
+          formControlName="valid_until"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          class="w-full"
+        />
+        @if (form.get('valid_until')?.invalid && form.get('valid_until')?.touched) {
+          <small class="text-red-500">Fecha de fin requerida.</small>
+        }
+      </div>
+    </div>
+
+    <!-- Regla de Cálculo -->
+    <div class="field mb-4">
+      <label for="calculation_rule" class="block font-semibold mb-1">Regla de Cálculo</label>
+      <textarea id="calculation_rule" pTextarea formControlName="calculation_rule"
+                rows="3" class="w-full" placeholder="Descripción de la regla de cálculo (opcional)"></textarea>
+    </div>
+
+    <!-- Estado -->
+    <div class="field mb-6">
+      <label class="block font-semibold mb-1">Estado</label>
+      <p-selectbutton formControlName="status" [options]="statusOptions"
+                      optionLabel="label" optionValue="value" />
+    </div>
+
+    <!-- Botones -->
+    <div class="flex gap-3 justify-end">
+      <p-button type="button" label="Cancelar" [text]="true" severity="secondary" (onClick)="cancel()" />
+      <p-button type="submit" [label]="isEdit ? 'Guardar cambios' : 'Crear tarifa'"
+              [loading]="loading()" icon="pi pi-save" />
+    </div>
+
+  </form>
+</div>

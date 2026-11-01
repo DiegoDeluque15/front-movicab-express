@@ -1,0 +1,146 @@
+<div class="space-y-6">
+    <app-page-header [title]="'Seguimiento en Vivo #' + tripId()" subtitle="Ubicación geográfica y estado de la carrera en tiempo real">
+        <div class="flex items-center gap-2">
+            <a routerLink="/trips" class="p-button p-button-sm p-button-outlined p-button-secondary text-xs">
+                <i class="pi pi-arrow-left mr-1"></i> Volver
+            </a>
+            @if (ws.connectionStatus() === 'connected') {
+            <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                <i class="pi pi-circle-fill text-[8px] text-emerald-500 animate-pulse"></i>
+                WebSocket En Vivo
+            </span>
+            } @else {
+            <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                <i class="pi pi-spin pi-spinner text-xs"></i>
+                Reconectando...
+            </span>
+            }
+        </div>
+    </app-page-header>
+
+    @if (trip(); as t) {
+    <!-- Barra de Progreso de Estados -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+        <div class="grid grid-cols-4 text-center text-xs font-semibold gap-2">
+            <div [class.text-blue-600]="true" class="space-y-1">
+                <div class="h-2 rounded-full bg-blue-600"></div>
+                <span>1. Solicitada</span>
+            </div>
+            <div [class.text-blue-600]="t.status === 'aceptada' || t.status === 'en_curso' || t.status === 'cerrada'"
+                 [class.text-slate-300]="t.status === 'solicitada' || t.status === 'cancelada'" class="space-y-1">
+                <div class="h-2 rounded-full" [class.bg-blue-600]="t.status === 'aceptada' || t.status === 'en_curso' || t.status === 'cerrada'" [class.bg-slate-200]="t.status === 'solicitada' || t.status === 'cancelada'"></div>
+                <span>2. Conductor Asignado</span>
+            </div>
+            <div [class.text-blue-600]="t.status === 'en_curso' || t.status === 'cerrada'"
+                 [class.text-slate-300]="t.status !== 'en_curso' && t.status !== 'cerrada'" class="space-y-1">
+                <div class="h-2 rounded-full" [class.bg-blue-600]="t.status === 'en_curso' || t.status === 'cerrada'" [class.bg-slate-200]="t.status !== 'en_curso' && t.status !== 'cerrada'"></div>
+                <span>3. En Curso</span>
+            </div>
+            <div [class.text-emerald-600]="t.status === 'cerrada'"
+                 [class.text-slate-300]="t.status !== 'cerrada'" class="space-y-1">
+                <div class="h-2 rounded-full" [class.bg-emerald-600]="t.status === 'cerrada'" [class.bg-slate-200]="t.status !== 'cerrada'"></div>
+                <span>4. Finalizada</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Mapa Interactivo en Tiempo Real -->
+        <div class="lg:col-span-8 space-y-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <i class="pi pi-map text-blue-600"></i> Ruta y Posición Satelital
+                    </span>
+                    <p-tag [value]="getStatusLabel(t.status)" [severity]="getStatusSeverity(t.status)" />
+                </div>
+
+                <app-interactive-map
+                    [origin]="t.origin_lat ? { lat: t.origin_lat, lng: t.origin_lng!, address: t.origin_address || '' } : null"
+                    [destination]="t.destination_lat ? { lat: t.destination_lat, lng: t.destination_lng!, address: t.destination_address || '' } : null"
+                    [driverLocation]="currentDriverLocation()"
+                    interactiveMode="passenger_tracking"
+                    height="460px"
+                />
+            </div>
+        </div>
+
+        <!-- Panel Lateral con Información del Conductor y Ruta -->
+        <div class="lg:col-span-4 space-y-4">
+            <!-- Conductor y Vehículo -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="pi pi-id-card text-blue-600"></i> Unidad de Transporte
+                </h3>
+
+                @if (t.driver) {
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg">
+                            <i class="pi pi-user text-xl"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800 text-base block">{{ t.driver.name }}</span>
+                            <span class="text-xs text-slate-500">Conductor Autorizado</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Vehículo / Modelo:</span>
+                            <span class="font-bold text-slate-700">{{ t.vehicle?.name || 'Móvil asignado' }}</span>
+                        </div>
+                        @if (t.vehicle?.plate) {
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Placa:</span>
+                            <span class="font-mono font-bold text-slate-900 bg-amber-200 px-1.5 py-0.5 rounded">{{ t.vehicle?.plate }}</span>
+                        </div>
+                        }
+                    </div>
+                </div>
+                } @else {
+                <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-center space-y-2 text-amber-800">
+                    <i class="pi pi-clock text-2xl"></i>
+                    <p class="text-xs font-semibold">
+                        Buscando el conductor más cercano o asignando unidad desde despacho...
+                    </p>
+                </div>
+                }
+            </div>
+
+            <!-- Detalles de la Ruta y Valor -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3 text-sm">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                    Detalles del Viaje
+                </h3>
+
+                <div class="space-y-2 text-xs">
+                    <div class="flex items-start gap-2">
+                        <i class="pi pi-map-marker text-emerald-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-bold text-slate-700 block">Origen:</span>
+                            <span class="text-slate-600">{{ t.origin_address || 'Punto de origen' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-2">
+                        <i class="pi pi-flag text-red-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-bold text-slate-700 block">Destino:</span>
+                            <span class="text-slate-600">{{ t.destination_address || 'Punto de destino' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-slate-500 text-xs">Total del Servicio:</span>
+                    <span class="text-xl font-black text-slate-800">
+                        ${{ (t.final_price || t.total || t.estimated_price || 0) | number:'1.0-0' }} COP
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+

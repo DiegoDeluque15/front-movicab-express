@@ -1,0 +1,95 @@
+<div class="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
+    <!-- Contenedor del Mapa Leaflet -->
+    <div #mapContainer class="w-full" [style.height]="height()"></div>
+
+    <!-- Barra de Búsqueda Flotante y Geocodificación (Solo en modo passenger_pickup) -->
+    @if (interactiveMode() === 'passenger_pickup' && showSearch()) {
+    <div class="absolute top-3 inset-x-3 sm:inset-x-auto sm:left-3 sm:w-80 z-[1000] space-y-1.5">
+        <div
+            class="flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-xl shadow-lg border border-slate-200">
+            <!-- Selector de Objetivo: Origen o Destino -->
+            <button type="button" (click)="searchTarget.set(searchTarget() === 'origin' ? 'destination' : 'origin')"
+                [class.bg-emerald-50]="searchTarget() === 'origin'"
+                [class.text-emerald-700]="searchTarget() === 'origin'"
+                [class.border-emerald-200]="searchTarget() === 'origin'"
+                [class.bg-rose-50]="searchTarget() === 'destination'"
+                [class.text-rose-700]="searchTarget() === 'destination'"
+                [class.border-rose-200]="searchTarget() === 'destination'"
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer">
+                <i class="pi text-xs" [class.pi-map-marker]="searchTarget() === 'origin'"
+                    [class.pi-flag]="searchTarget() === 'destination'"></i>
+                {{ searchTarget() === 'origin' ? 'Origen' : 'Destino' }}
+            </button>
+
+            <!-- Campo de Texto de Búsqueda -->
+            <div class="relative flex-1">
+                <input type="text" [value]="searchQuery()" (input)="onSearchInput($any($event.target).value)"
+                    placeholder="Buscar dirección o lugar..."
+                    class="w-full bg-transparent border-0 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0 py-1 px-1.5" />
+                @if (isSearching()) {
+                <i class="pi pi-spin pi-spinner absolute right-1 top-1.5 text-xs text-slate-400"></i>
+                }
+            </div>
+        </div>
+
+        <!-- Resultados Autocompletados de Nominatim -->
+        @if (searchResults().length > 0) {
+        <div
+            class="bg-white/98 backdrop-blur-md rounded-xl shadow-xl border border-slate-200 overflow-hidden divide-y divide-slate-100 max-h-52 overflow-y-auto">
+            @for (res of searchResults(); track res.displayName) {
+            <button type="button" (click)="selectSearchResult(res)"
+                class="w-full text-left p-2.5 hover:bg-slate-50 transition-colors flex items-start gap-2 text-xs cursor-pointer">
+                <i class="pi pi-map-pin text-blue-600 mt-0.5"></i>
+                <div class="overflow-hidden">
+                    <span class="font-bold text-slate-800 block truncate">{{ res.shortName }}</span>
+                    <span class="text-[11px] text-slate-400 block truncate">{{ res.displayName }}</span>
+                </div>
+            </button>
+            }
+        </div>
+        }
+    </div>
+
+    <!-- Pestañas de Acción en Modo Selección Manual -->
+    <div
+        class="absolute bottom-3 left-3 z-[1000] flex flex-wrap gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-xl shadow-md border border-slate-200 text-xs">
+        <button type="button" (click)="setClickTarget('origin')" [class.bg-emerald-600]="clickTarget === 'origin'"
+            [class.text-white]="clickTarget === 'origin'" [class.bg-slate-100]="clickTarget !== 'origin'"
+            class="px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition-colors cursor-pointer">
+            <i class="pi pi-map-marker text-emerald-400" [class.text-white]="clickTarget === 'origin'"></i>
+            Fijar Origen
+        </button>
+
+        <button type="button" (click)="setClickTarget('destination')"
+            [class.bg-rose-600]="clickTarget === 'destination'" [class.text-white]="clickTarget === 'destination'"
+            [class.bg-slate-100]="clickTarget !== 'destination'"
+            class="px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition-colors cursor-pointer">
+            <i class="pi pi-flag text-rose-400" [class.text-white]="clickTarget === 'destination'"></i>
+            Fijar Destino
+        </button>
+
+        <button type="button" (click)="locateUser()"
+            class="px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+            title="Centrar en mi posición GPS actual">
+            <i class="pi pi-compass text-blue-600"></i>
+            Mi Ubicación
+        </button>
+    </div>
+    }
+
+    <!-- Píldora Flotante con Información de la Ruta Calculada -->
+    @if (activeRouteInfo(); as route) {
+    <div
+        class="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-md border border-slate-200 text-xs flex items-center gap-2">
+        <i class="pi pi-directions text-blue-600"></i>
+        <span class="font-bold text-slate-800">{{ route.distanceKm }} km</span>
+        <span class="text-slate-400">•</span>
+        <span class="text-slate-600">~{{ route.durationMin }} min</span>
+        @if (route.isRealRoute) {
+        <p-tag severity="success" value="Ruta Vial" styleClass="text-[10px]" />
+        } @else {
+        <p-tag severity="warn" value="Aprox. Directa" styleClass="text-[10px]" />
+        }
+    </div>
+    }
+</div>

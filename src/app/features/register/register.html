@@ -1,0 +1,69 @@
+<div class="register-wrapper">
+    <div class="register-card">
+        <div class="text-center mb-6">
+            <h1 class="register-title">Únete a MoviCab Express</h1>
+            <p class="register-subtitle">Crea tu cuenta de pasajero en segundos</p>
+        </div>
+
+        @if (error()) {
+        <p-message severity="error" styleClass="w-full mb-4">{{ error() }}</p-message>
+        }
+
+        @if (successMessage()) {
+        <p-message severity="success" styleClass="w-full mb-4">{{ successMessage() }}</p-message>
+        }
+
+        <form (ngSubmit)="onSubmit()" class="register-form">
+            <div class="field">
+                <label for="name">Nombre completo *</label>
+                <input id="name" type="text" pInputText [(ngModel)]="name" [ngModelOptions]="{ standalone: true }"
+                    placeholder="Ej. Juan Pérez" class="w-full" required />
+            </div>
+
+            <div class="field">
+                <label for="email">Correo electrónico *</label>
+                <input id="email" type="email" pInputText [(ngModel)]="email" [ngModelOptions]="{ standalone: true }"
+                    placeholder="juan.perez@ejemplo.com" class="w-full" required />
+            </div>
+
+            <div class="field">
+                <label for="phone">Teléfono de contacto *</label>
+                <input id="phone" type="tel" pInputText [(ngModel)]="phone" [ngModelOptions]="{ standalone: true }"
+                    placeholder="Ej. +57 300 1234567" class="w-full" required />
+            </div>
+
+            <div class="field">
+                <label for="address">Dirección habitual (opcional)</label>
+                <input id="address" type="text" pInputText [(ngModel)]="address" [ngModelOptions]="{ standalone: true }"
+                    placeholder="Ej. Calle 100 # 15-20" class="w-full" />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="field">
+                    <label for="password">Contraseña *</label>
+                    <p-password inputId="password" [(ngModel)]="password" [ngModelOptions]="{ standalone: true }"
+                        [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full"
+                        placeholder="Mínimo 6 caracteres" required />
+                </div>
+
+                <div class="field">
+                    <label for="confirmPassword">Confirmar contraseña *</label>
+                    <p-password inputId="confirmPassword" [(ngModel)]="confirmPassword" [ngModelOptions]="{ standalone: true }"
+                        [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full"
+                        placeholder="Repite la contraseña" required />
+                </div>
+            </div>
+
+            <p-button type="submit" label="Crear Cuenta de Pasajero" icon="pi pi-user-plus" styleClass="w-full mt-2"
+                [loading]="loading()" />
+        </form>
+
+        <div class="mt-6 text-center text-sm text-slate-500">
+            ¿Ya tienes una cuenta?
+            <a routerLink="/login" class="font-semibold text-blue-600 hover:text-blue-700 ml-1 underline">
+                Inicia sesión aquí
+            </a>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,213 @@
+<div class="space-y-6">
+    <app-page-header title="Panel del Conductor" subtitle="Gestión de carreras asignadas, navegación y reporte GPS">
+        <div class="flex items-center gap-3">
+            <span class="text-xs font-semibold uppercase text-slate-500">Disponibilidad:</span>
+            <button type="button" (click)="isAvailable.set(!isAvailable())" [class.bg-emerald-600]="isAvailable()"
+                [class.bg-slate-400]="!isAvailable()"
+                class="px-3 py-1.5 rounded-full text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs">
+                <i class="pi" [class.pi-check]="isAvailable()" [class.pi-power-off]="!isAvailable()"></i>
+                {{ isAvailable() ? 'Disponible para Despacho' : 'Fuera de Servicio' }}
+            </button>
+        </div>
+    </app-page-header>
+
+    @if (gps.gpsState() === 'denied') {
+    <p-message severity="warn" styleClass="w-full">
+        <span class="font-bold">Permiso de ubicación denegado:</span>
+        Activa los permisos de GPS en tu navegador para que los pasajeros y la central de despacho puedan seguir tu ruta
+        en tiempo real.
+    </p-message>
+    } @else if (gps.gpsState() === 'unavailable') {
+    <p-message severity="error" styleClass="w-full">
+        <span class="font-bold">Señal GPS no disponible:</span>
+        Verifica que la antena o servicio de localización del dispositivo esté encendido.
+    </p-message>
+    }
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Columna Izquierda: Lista de Carreras Asignadas -->
+        <div class="lg:col-span-5 space-y-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <i class="pi pi-car text-blue-600"></i> Carreras Asignadas ({{ assignedTrips().length }})
+                    </span>
+                    <button pButton icon="pi pi-refresh" [text]="true" [rounded]="true"
+                        (click)="loadAssignedTrips()"></button>
+                </div>
+
+                @if (assignedTrips().length === 0) {
+                <app-empty-state icon="pi-inbox" title="Sin carreras pendientes"
+                    message="No tienes carreras asignadas en este momento." />
+                } @else {
+                <div class="space-y-2">
+                    @for (trip of assignedTrips(); track trip.id) {
+                    <div (click)="selectTrip(trip)" [class.border-blue-500]="activeTrip()?.id === trip.id"
+                        [class.bg-blue-50/50]="activeTrip()?.id === trip.id"
+                        [class.border-slate-200]="activeTrip()?.id !== trip.id"
+                        class="p-3.5 rounded-lg border-2 cursor-pointer transition-all hover:border-blue-300 hover:shadow-xs space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono font-bold text-slate-800 text-sm">#{{ trip.id }}</span>
+                            <p-tag [value]="getStatusLabel(trip.status)"
+                                [severity]="trip.status === 'en_curso' ? 'success' : 'info'" />
+                        </div>
+
+                        <div class="text-xs text-slate-600 space-y-1">
+                            <div class="flex items-center gap-1.5 truncate">
+                                <i class="pi pi-map-marker text-emerald-500"></i>
+                                <span class="truncate">{{ trip.origin_address || 'Punto de partida' }}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 truncate">
+                                <i class="pi pi-flag text-red-500"></i>
+                                <span class="truncate">{{ trip.destination_address || 'Punto de destino' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                            <span class="text-slate-500">Pasajero: {{ trip.passenger?.name || 'Pasajero' }}</span>
+                            <span class="font-bold text-slate-700">${{ trip.estimated_price || 0 | number:'1.0-0'
+                                }}</span>
+                        </div>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Carrera Activa, Mapa y Control de Estados -->
+        <div class="lg:col-span-7 space-y-4">
+            @if (activeTrip(); as currentTrip) {
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5">
+                <!-- Encabezado de la Carrera Activa -->
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
+                    <div>
+                        <span class="text-xs text-slate-400 font-mono">CARRERA SELECCIONADA</span>
+                        <h2 class="text-xl font-black text-slate-800">
+                            Carrera #{{ currentTrip.id }}
+                        </h2>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        @if (gps.gpsState() === 'active') {
+                        <span
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                            <i class="pi pi-circle-fill text-[8px] text-emerald-500 animate-pulse"></i>
+                            GPS Activo (±{{ gps.accuracyMeters() || 0 }}m)
+                        </span>
+                        } @else if (gps.gpsState() === 'weak_signal') {
+                        <span
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-200">
+                            <i class="pi pi-exclamation-triangle text-amber-500 text-xs"></i>
+                            Señal Débil (±{{ gps.accuracyMeters() || 0 }}m)
+                        </span>
+                        }
+                        <p-tag [value]="getStatusLabel(currentTrip.status)"
+                            [severity]="currentTrip.status === 'en_curso' ? 'success' : 'info'" />
+                    </div>
+                </div>
+
+                <!-- Mapa con Origen, Destino y Posición del Conductor -->
+                <app-interactive-map
+                    [origin]="currentTrip.origin_lat ? { lat: currentTrip.origin_lat, lng: currentTrip.origin_lng!, address: currentTrip.origin_address || '' } : null"
+                    [destination]="currentTrip.destination_lat ? { lat: currentTrip.destination_lat, lng: currentTrip.destination_lng!, address: currentTrip.destination_address || '' } : null"
+                    [driverLocation]="gps.currentLocation()" interactiveMode="driver_navigation" height="340px" />
+
+                <!-- Información del Pasajero y Ruta -->
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="space-y-1.5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                            Pasajero
+                        </span>
+                        <p class="font-bold text-slate-800">{{ currentTrip.passenger?.name || 'No especificado' }}</p>
+                        @if (currentTrip.passenger?.phone) {
+                        <a [href]="'tel:' + currentTrip.passenger?.phone"
+                            class="text-blue-600 hover:underline flex items-center gap-1 text-xs font-semibold">
+                            <i class="pi pi-phone text-xs"></i> {{ currentTrip.passenger?.phone }}
+                        </a>
+                        }
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                            Detalles Económicos
+                        </span>
+                        <div class="text-xs text-slate-600 space-y-0.5">
+                            <div class="flex justify-between">
+                                <span>Distancia:</span>
+                                <span class="font-semibold">{{ currentTrip.estimated_distance_km || 0 }} km</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Tarifa Estimada:</span>
+                                <span class="font-bold text-slate-800">${{ currentTrip.estimated_price || 0 |
+                                    number:'1.0-0' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (currentTrip.notes) {
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-xs text-amber-800">
+                    <span class="font-bold block">Notas del Pasajero:</span>
+                    {{ currentTrip.notes }}
+                </div>
+                }
+
+                <!-- Botones de Acción según la Máquina de Estados -->
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
+                    <button type="button" pButton icon="pi pi-times" label="Cancelar"
+                        class="p-button-outlined p-button-danger text-sm"
+                        [disabled]="actionLoading() || currentTrip.status === 'en_curso'"
+                        (click)="openCancelModal()"></button>
+
+                    <div class="flex gap-2">
+                        @if (currentTrip.status === 'aceptada') {
+                        <p-button label="Iniciar Viaje (En Curso)" icon="pi pi-play" severity="success"
+                            styleClass="p-button-lg" [loading]="actionLoading()" (onClick)="startTrip(currentTrip)" />
+                        }
+
+                        @if (currentTrip.status === 'en_curso') {
+                        <p-button label="Finalizar Viaje (Cerrar)" icon="pi pi-check" severity="primary"
+                            styleClass="p-button-lg shadow-md" [loading]="actionLoading()"
+                            (onClick)="completeTrip(currentTrip)" />
+                        }
+                    </div>
+                </div>
+            </div>
+            } @else {
+            <div class="bg-white p-12 rounded-xl border border-slate-200 text-center space-y-3">
+                <i class="pi pi-compass text-4xl text-slate-300"></i>
+                <h3 class="font-bold text-slate-700">Ninguna carrera seleccionada</h3>
+                <p class="text-sm text-slate-400 max-w-sm mx-auto">
+                    Selecciona una de las carreras asignadas de la lista para ver la ruta en el mapa y gestionar su
+                    estado.
+                </p>
+            </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cancelar Carrera Conductor -->
+<p-dialog [(visible)]="showCancelModal" [modal]="true" header="Cancelar Carrera"
+    [style]="{ width: '90vw', maxWidth: '400px' }">
+    <div class="space-y-3 py-2 text-sm">
+        <p class="text-slate-600">
+            ¿Confirmas la cancelación de la carrera? Esto notificará de inmediato al pasajero y a la central de
+            despacho.
+        </p>
+        <div class="space-y-1">
+            <label class="text-xs font-semibold text-slate-700">Motivo</label>
+            <input type="text" pInputText [(ngModel)]="cancelReason" placeholder="Ej. Falla mecánica, tráfico bloqueado"
+                class="w-full text-sm" />
+        </div>
+    </div>
+    <ng-template #footer>
+        <div class="flex gap-2 justify-end">
+            <p-button label="Volver" icon="pi pi-arrow-left" [text]="true" (onClick)="showCancelModal.set(false)" />
+            <p-button label="Cancelar Carrera" icon="pi pi-check" severity="danger" [loading]="actionLoading()"
+                (onClick)="confirmCancel()" />
+        </div>
+    </ng-template>
+</p-dialog>

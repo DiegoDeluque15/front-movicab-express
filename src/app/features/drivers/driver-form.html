@@ -1,0 +1,56 @@
+<app-page-header
+  [title]="isEdit ? 'Editar Conductor' : 'Nuevo Conductor'"
+  [subtitle]="isEdit ? 'Modifica los datos del conductor' : 'Completa los datos para registrar un conductor'"
+/>
+
+<div class="card max-w-2xl mx-auto">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+    <!-- Nombre -->
+    <div class="field mb-4">
+      <label for="name" class="block font-semibold mb-1">Nombre <span class="text-red-500">*</span></label>
+      <input id="name" pInputText formControlName="name" class="w-full"
+             placeholder="Nombre completo del conductor" />
+      @if (form.get('name')?.invalid && form.get('name')?.touched) {
+        <small class="text-red-500">El nombre es requerido (mín. 2 caracteres).</small>
+      }
+    </div>
+
+    <!-- Empresa -->
+    <div class="field mb-4">
+      <label for="company_id" class="block font-semibold mb-1">Empresa</label>
+      <p-select
+        inputId="company_id"
+        formControlName="company_id"
+        [options]="companies()"
+        optionLabel="legal_name"
+        optionValue="id"
+        placeholder="Selecciona una empresa"
+        class="w-full"
+        [showClear]="true"
+      />
+    </div>
+
+    <!-- Descripción -->
+    <div class="field mb-4">
+      <label for="description" class="block font-semibold mb-1">Descripción</label>
+      <textarea id="description" pTextarea formControlName="description"
+                rows="3" class="w-full" placeholder="Notas adicionales (opcional)"></textarea>
+    </div>
+
+    <!-- Estado -->
+    <div class="field mb-6">
+      <label class="block font-semibold mb-1">Estado</label>
+      <p-selectbutton formControlName="status" [options]="statusOptions"
+                      optionLabel="label" optionValue="value" />
+    </div>
+
+    <!-- Botones -->
+    <div class="flex gap-3 justify-end">
+      <p-button type="button" label="Cancelar" [text]="true" severity="secondary" (onClick)="cancel()" />
+      <p-button type="submit" [label]="isEdit ? 'Guardar cambios' : 'Crear conductor'"
+                [loading]="loading()" icon="pi pi-save" />
+    </div>
+
+  </form>
+</div>

@@ -1,0 +1,84 @@
+<app-page-header
+  title="Generar Liquidación"
+  subtitle="Totaliza y liquida los servicios prestados por un conductor en un rango de fechas"
+/>
+
+<div class="card max-w-2xl mx-auto">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+    <!-- Conductor -->
+    <div class="field mb-4">
+      <label for="driver_id" class="block font-semibold mb-1">Conductor <span class="text-red-500">*</span></label>
+      <p-select
+        inputId="driver_id"
+        formControlName="driver_id"
+        [options]="drivers()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecciona el conductor a liquidar"
+        class="w-full"
+        [filter]="true"
+        filterBy="name"
+      />
+      @if (form.get('driver_id')?.invalid && form.get('driver_id')?.touched) {
+        <small class="text-red-500">Debe seleccionar un conductor.</small>
+      }
+    </div>
+
+    <!-- Rango de Fechas -->
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div class="field">
+        <label for="date_from" class="block font-semibold mb-1">Fecha Desde <span class="text-red-500">*</span></label>
+        <p-datepicker
+          inputId="date_from"
+          formControlName="date_from"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          class="w-full"
+        />
+        @if (form.get('date_from')?.invalid && form.get('date_from')?.touched) {
+          <small class="text-red-500">Fecha de inicio obligatoria.</small>
+        }
+      </div>
+      <div class="field">
+        <label for="date_to" class="block font-semibold mb-1">Fecha Hasta <span class="text-red-500">*</span></label>
+        <p-datepicker
+          inputId="date_to"
+          formControlName="date_to"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          class="w-full"
+        />
+        @if (form.get('date_to')?.invalid && form.get('date_to')?.touched) {
+          <small class="text-red-500">Fecha final obligatoria.</small>
+        }
+      </div>
+    </div>
+
+    <!-- Notas -->
+    <div class="field mb-6">
+      <label for="notes" class="block font-semibold mb-1">Notas / Observaciones</label>
+      <textarea
+        id="notes"
+        pTextarea
+        formControlName="notes"
+        rows="3"
+        class="w-full"
+        placeholder="Observaciones de la liquidación, deducciones o incentivos (opcional)"
+      ></textarea>
+    </div>
+
+    <div class="p-4 mb-6 rounded-lg bg-sky-50 border border-sky-200 text-sm text-sky-800">
+      <i class="pi pi-info-circle mr-1"></i>
+      El backend calculará el valor total de las carreras cerradas asociadas a los turnos del conductor dentro del periodo indicado.
+    </div>
+
+    <!-- Botones -->
+    <div class="flex gap-3 justify-end">
+      <p-button type="button" label="Cancelar" [text]="true" severity="secondary" (onClick)="cancel()" />
+      <p-button type="submit" label="Generar Liquidación" [loading]="loading()" icon="pi pi-check" />
+    </div>
+
+  </form>
+</div>
+

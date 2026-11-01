@@ -1,0 +1,79 @@
+<app-page-header
+  title="Registrar Nuevo Pago"
+  subtitle="Registra el cobro de una carrera realizada"
+/>
+
+<div class="card max-w-2xl mx-auto">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+    <!-- Carrera de Referencia -->
+    <div class="field mb-4">
+      <label for="reference_id" class="block font-semibold mb-1">Carrera / Viaje a Pagar <span class="text-red-500">*</span></label>
+      <small class="block text-slate-500 mb-1">Nota: De acuerdo a las reglas del backend, solo las carreras en estado <strong>cerrada</strong> pueden recibir pago.</small>
+      <p-select
+        inputId="reference_id"
+        formControlName="reference_id"
+        [options]="trips()"
+        optionLabel="id"
+        optionValue="id"
+        placeholder="Selecciona la carrera asociada"
+        class="w-full"
+        [filter]="true"
+      >
+        <ng-template #selectedItem let-item>
+          <span>Carrera #{{ item.id }} — {{ item.passenger?.name || 'Sin pasajero' }} ({{ item.status }})</span>
+        </ng-template>
+        <ng-template #item let-item>
+          <div class="flex justify-between items-center w-full">
+            <span>#{{ item.id }} — {{ item.passenger?.name || 'Sin pasajero' }}</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded"
+                  [ngClass]="item.status === 'cerrada' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'">
+              {{ item.status }}
+            </span>
+          </div>
+        </ng-template>
+      </p-select>
+      @if (form.get('reference_id')?.invalid && form.get('reference_id')?.touched) {
+        <small class="text-red-500">Debe seleccionar una carrera.</small>
+      }
+    </div>
+
+    <!-- Método de Pago -->
+    <div class="field mb-4">
+      <label for="payment_method" class="block font-semibold mb-1">Método de Pago <span class="text-red-500">*</span></label>
+      <p-select
+        inputId="payment_method"
+        formControlName="payment_method"
+        [options]="paymentMethods"
+        optionLabel="label"
+        optionValue="value"
+        class="w-full"
+      />
+    </div>
+
+    <!-- Monto -->
+    <div class="field mb-6">
+      <label for="amount" class="block font-semibold mb-1">Monto a Cobrar <span class="text-red-500">*</span></label>
+      <p-inputnumber
+        inputId="amount"
+        formControlName="amount"
+        mode="decimal"
+        [minFractionDigits]="2"
+        [maxFractionDigits]="2"
+        [min]="0.01"
+        class="w-full"
+        placeholder="0.00"
+      />
+      @if (form.get('amount')?.invalid && form.get('amount')?.touched) {
+        <small class="text-red-500">Ingrese un monto válido mayor a cero.</small>
+      }
+    </div>
+
+    <!-- Botones -->
+    <div class="flex gap-3 justify-end">
+      <p-button type="button" label="Cancelar" [text]="true" severity="secondary" (onClick)="cancel()" />
+      <p-button type="submit" label="Registrar Pago" [loading]="loading()" icon="pi pi-check" />
+    </div>
+
+  </form>
+</div>

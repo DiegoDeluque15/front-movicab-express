@@ -1,0 +1,48 @@
+<app-page-header [title]="isEdit() ? 'Editar Tipo de Vehículo' : 'Nuevo Tipo de Vehículo'">
+    <p-button label="Volver a la lista" icon="pi pi-arrow-left" severity="secondary" [text]="true"
+        routerLink="/vehicle-types" />
+</app-page-header>
+
+@if (loading()) {
+<div class="p-6 text-center text-slate-400">
+    <i class="pi pi-spin pi-spinner text-2xl mr-2"></i>
+    Cargando datos...
+</div>
+} @else {
+<div class="mx-auto max-w-2xl rounded-lg bg-white p-6 shadow-sm">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+
+        <!-- Nombre del Tipo -->
+        <div class="flex flex-col gap-1">
+            <label for="name" class="text-sm font-semibold text-slate-700">Nombre del Tipo *</label>
+            <input id="name" type="text" pInputText formControlName="name" placeholder="Ej. Sedán, SUV, Microbús..."
+                class="w-full" />
+            @if (form.get('name')?.touched && form.get('name')?.hasError('required')) {
+            <small class="text-red-500">El nombre del tipo es obligatorio.</small>
+            }
+        </div>
+
+        <!-- Descripción -->
+        <div class="flex flex-col gap-1">
+            <label for="description" class="text-sm font-semibold text-slate-700">Descripción</label>
+            <textarea id="description" pTextarea formControlName="description" rows="3"
+                placeholder="Ej. Capacidad para 4 pasajeros, baúl amplio..." class="w-full"></textarea>
+        </div>
+
+        <!-- Estado -->
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-semibold text-slate-700">Estado</label>
+            <p-selectbutton [options]="statusOptions" formControlName="status" optionLabel="label"
+                optionValue="value" />
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="mt-4 flex justify-end gap-3 border-t border-slate-100 pt-4">
+            <p-button type="button" label="Cancelar" severity="secondary" [text]="true" routerLink="/vehicle-types" />
+            <p-button type="submit" [label]="isEdit() ? 'Guardar Cambios' : 'Registrar Tipo'" icon="pi pi-check"
+                [loading]="saving()" />
+        </div>
+
+    </form>
+</div>
+}
